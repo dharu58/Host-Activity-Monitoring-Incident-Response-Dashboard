@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+psutil
+requests
+motor
+pydantic
