@@ -26,10 +26,8 @@ The system continuously collects CPU, memory, disk, network, I/O, and process-le
 
 ---
 
-## 📁 Project Files
+# 📁 Project Files
 
-bash
-Copy code
 Host-Activity-Monitoring-Incident-Response-Dashboard/
 │
 ├── agent.py               # Host monitoring agent
