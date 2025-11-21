@@ -75,3 +75,65 @@ python simulate_hosts.py
 
 🌐 6. Open the Frontend Dashboard
 start dashboard.html
+
+
+7. You can make it portable using Docker:
+
+Adding THIS makes the project runnable anywhere (Windows, Linux, Mac, cloud, VMs).
+
+👉 *Here is a ready Dockerfile for your project*:
+
+⁠ dockerfile
+FROM python:3.12
+
+WORKDIR /app
+
+# Copy project
+COPY . .
+
+# Install dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Expose port for FastAPI
+EXPOSE 8000
+
+# Start FastAPI
+CMD ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
+ ⁠
+
+Build:
+
+⁠ bash
+docker build -t host-monitor .
+ ⁠
+
+Run:
+
+⁠ bash
+docker run -p 8000:8000 host-monitor
+ ⁠
+
+Boom — works on ALL laptops.
+
+---
+
+Avoid Hardcoded Paths:
+
+Your project seems clean, but if any script uses:
+
+
+C:/Users/suhani/Desktop/...
+
+
+Replace with:
+
+⁠ python
+import os
+BASE_DIR = os.path.dirname(__file__)
+file_path = os.path.join(BASE_DIR, "data", "file.json")
+ ⁠
+
+---
+
+
