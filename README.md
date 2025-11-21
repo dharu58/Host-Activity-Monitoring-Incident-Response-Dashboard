@@ -1,139 +1,131 @@
 # 🔐 Host Activity Monitoring & Incident Response Dashboard
 
-A real-time host monitoring and incident response dashboard that collects and visualizes system metrics, detects anomalies, and generates incident reports using **FastAPI**, **React**, and **MongoDB/Elasticsearch**.
+A real-time host monitoring and incident analytics system powered by:
+
+- **Python Monitoring Agent (psutil)**
+- **FastAPI Backend (MongoDB storage)**
+- **HTML + JavaScript Dashboard (Chart.js)**
+
+The system continuously collects CPU, memory, disk, network, I/O, and process-level data from hosts, stores them in MongoDB, and visualizes them in a real-time dashboard.
 
 ---
 
-## 📖 Project Overview
-The **Host Activity Monitoring & Incident Response Dashboard** provides real-time visibility into host activity, detects suspicious behavior, and supports effective response actions.  
+## 🚀 Features
 
-Key metrics include **CPU usage, memory utilization, network activity, running processes, and system logs**.  
-A lightweight **Python agent** collects these metrics and sends them to a **FastAPI backend**, which stores the data in **MongoDB/Elasticsearch**.  
-
-A **React-based dashboard** visualizes the collected data with charts and tables, highlights anomalies, and provides structured incident reports (PDF/HTML).  
-Response actions such as notifying admins, terminating suspicious processes, or isolating hosts will be integrated.  
-
-By the end, the system will deliver a **secure, scalable, and interactive monitoring solution** for cybersecurity operations.  
-
----
-
-## ✨ Features
-- Monitor CPU, memory, network activity, processes, and logs  
-- Real-time dashboard with filters (host, timeframe, activity type)  
-- Rule-based incident detection and alerts  
-- Automated PDF/HTML incident reports  
-- Response actions: notify admin, kill process, isolate host  
-- Authentication & role-based access control  
+- Real-time system metrics (CPU, RAM, Disk, Network)
+- Live Chart.js graphs (auto-refreshing)
+- Multi-host monitoring using hostname identifiers
+- Lightweight Python agent
+- FastAPI backend with MongoDB storage
+- Historical + Latest metrics APIs
+- Pure JS dashboard (no frameworks needed)
+- Host simulation using `simulate_hosts.py`
 
 ---
 
-## 🛠 Tech Stack
-- **Backend** → FastAPI  
-- **Frontend** → React  
-- **Database** → MongoDB / Elasticsearch  
-- **Agent** → Python  
 
 ---
 
-## 🗓 Roadmap
-- **Week 1–2**: Planning & Setup  
-- **Week 3–4**: Data Collection  
-- **Week 5–6**: Monitoring Dashboard  
-- **Week 7–8**: Incident Detection  
-- **Week 9–10**: Reporting & Response  
-- **Week 11–12**: Finalization & Security  
+# Project File
+
+│
+├── agent.py # Host monitoring agent
+├── simulate_hosts.py # Multi-host simulator
+├── fastapi_app.py # FastAPI backend + MongoDB logic
+├── dashboard.html # Real-time dashboard UI
+├── requirements.txt # Python dependencies
+├── Dockerfile # Docker container for backend
+├── .env.example # MongoDB connection template
+└── README.md # Documentation
+
 
 ---
 
-## ⚙️ Setup Instructions
-# 🚀 Project Setup & Run Guide (Windows)
+# ⚙️ Tech Stack
 
-This guide explains how to start MongoDB, launch the FastAPI backend, run supporting scripts, and open the frontend dashboard on **Windows**.
+### Backend  
+- FastAPI  
+- Uvicorn  
+- Motor (Async MongoDB Driver)
+
+### Monitoring Agent  
+- Python  
+- psutil  
+- requests  
+
+### Frontend  
+- HTML  
+- JavaScript  
+- Chart.js  
+- date-fns  
+
+### Database  
+- MongoDB  
 
 ---
 
-## 📦 1. Start MongoDB Server
+# ▶️ Setup Instructions
 
-If MongoDB is installed as a **Windows service** (default):
-
-```sh
-net start MongoDB
-
-📥 2. Install Dependencies
+## **1. Install Dependencies**
 pip install -r requirements.txt
 
-3. Start the FastAPI Server
+
+## **2. Start MongoDB**
+
+
+mongod
+
+
+## **3. Start FastAPI Backend**
+
+
 uvicorn fastapi_app:app --reload --port 8000
 
-🤖 4. Run the Agent Script
-Open a new terminal and activate the venv again:
+
+## **4. Run Monitoring Agent**
+
+
 python agent.py
 
-🖥️ 5. Run the Host Simulation Script
-In another terminal:
+
+Simulate multiple hosts:
+
+
 python simulate_hosts.py
 
-🌐 6. Open the Frontend Dashboard
-start dashboard.html
+
+## **5. Start Dashboard**
+Open:
 
 
-7. You can make it portable using Docker:
+dashboard.html
 
-Adding THIS makes the project runnable anywhere (Windows, Linux, Mac, cloud, VMs).
-
-👉 *Here is a ready Dockerfile for your project*:
-
-⁠ dockerfile
-FROM python:3.12
-
-WORKDIR /app
-
-# Copy project
-COPY . .
-
-# Install dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# Expose port for FastAPI
-EXPOSE 8000
-
-# Start FastAPI
-CMD ["uvicorn", "fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
- ⁠
-
-Build:
-
-⁠ bash
-docker build -t host-monitor .
- ⁠
-
-Run:
-
-⁠ bash
-docker run -p 8000:8000 host-monitor
- ⁠
-
-Boom — works on ALL laptops.
+in your browser.
 
 ---
 
-Avoid Hardcoded Paths:
+# 🐳 Docker Deployment
 
-Your project seems clean, but if any script uses:
+Your repository includes a **Dockerfile** for running the FastAPI backend inside a container.
 
-
-C:/Users/suhani/Desktop/...
-
-
-Replace with:
-
-⁠ python
-import os
-BASE_DIR = os.path.dirname(__file__)
-file_path = os.path.join(BASE_DIR, "data", "file.json")
- ⁠
-
----
+## **1. Build the Docker Image**
 
 
+docker build -t host-monitor-backend .
+
+
+## **2. Run the Container**
+
+
+docker run -d -p 8000:8000 --name host-monitor host-monitor-backend
+
+
+Backend will now run at:
+
+
+http://localhost:8000
+
+
+## **3. Connect Dashboard and Agent to Docker**
+- The **agent** will POST metrics to the container’s exposed port.
+- The **dashboard** will fetch data from the same API URL.
