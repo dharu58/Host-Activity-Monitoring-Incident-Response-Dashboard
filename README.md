@@ -67,32 +67,37 @@ Host-Activity-Monitoring-Incident-Response-Dashboard/
 # ▶️ Setup Instructions
 
 ## **1. Install Dependencies**
+```bash
 pip install -r requirements.txt
+```
 
 
 ## **2. Start MongoDB**
 
-
+```bash
 mongod
+```
 
 
 ## **3. Start FastAPI Backend**
 
-
+```bash
 uvicorn fastapi_app:app --reload --port 8000
+```
 
 
 ## **4. Run Monitoring Agent**
 
-
+```bash
 python agent.py
+```
 
 
 Simulate multiple hosts:
 
-
+```bash
 python simulate_hosts.py
-
+```
 
 ## **5. Start Dashboard**
 Open:
@@ -110,14 +115,16 @@ Your repository includes a **Dockerfile** for running the FastAPI backend inside
 
 ## **1. Build the Docker Image**
 
-
+```bash
 docker build -t host-monitor-backend .
+```
 
 
 ## **2. Run the Container**
 
-
+```bash
 docker run -d -p 8000:8000 --name host-monitor host-monitor-backend
+```
 
 
 Backend will now run at:
