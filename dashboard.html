@@ -33,10 +33,67 @@
         #processes-display { list-style: none; padding: 0; margin-top: 10px; max-height: 250px; overflow-y: auto; }
         #processes-display li { background-color: #2c3e50; padding: 5px 10px; border-radius: 3px; margin-bottom: 3px; font-size: 0.9em; }
         .timestamp-header { font-weight: bold; color: #3498db; }
+        /* ADD: Alerts styling - place at end of existing <style> */
+#alerts-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 320px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none; /* let clicks pass except for buttons */
+}
+
+.alert-card {
+    pointer-events: auto;
+    background: #e74c3c; /* red */
+    color: #ffffff;
+    padding: 12px 14px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: Arial, sans-serif;
+    line-height: 1.1;
+}
+
+.alert-content {
+    flex: 1 1 auto;
+    font-size: 13px;
+}
+
+.alert-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+
+.alert-meta {
+    font-size: 12px;
+    opacity: 0.95;
+}
+
+.alert-ok {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.9);
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12px;
+}
+
     </style>
 </head>
 <body>
     <div class="container">
+    <div id="alerts-container" aria-live="polite"></div>
+
         <h1>Server Performance Dashboard</h1>
 
         <div class="controls">
@@ -100,6 +157,61 @@
         const timeRangeInput = document.getElementById('time-range');
 
         let cpuChart, memoryChart, diskChart, networkChart, diskIOChart, loadAvgChart, processCountChart;
+
+const SIMULATE_ALERTS = false;
+
+
+const activeAlerts = new Map();
+
+function makeAlertKey(host, metric) {
+    return `${host}::${metric}`;
+}
+
+function showAlert({ host, metric, value, severity = 'P2', timestamp = new Date().toISOString(), message = '' }) {
+    const key = makeAlertKey(host, metric);
+    if (activeAlerts.has(key)) return; // already shown
+    activeAlerts.set(key, true);
+
+    const container = document.getElementById('alerts-container');
+    if (!container) return;
+
+    const card = document.createElement('div');
+    card.className = 'alert-card';
+    card.dataset.alertKey = key;
+
+    const content = document.createElement('div');
+    content.className = 'alert-content';
+    content.innerHTML = `<div class="alert-title">${severity} — ${metric}</div>
+                         <div class="alert-meta">host: ${host} · ${value} · ${new Date(timestamp).toLocaleString()}</div>
+                         ${message ? `<div class="alert-meta">${message}</div>` : ''}`;
+
+    const ok = document.createElement('button');
+    ok.className = 'alert-ok';
+    ok.textContent = 'OK';
+    ok.onclick = () => dismissAlert(key, card);
+
+    card.appendChild(content);
+    card.appendChild(ok);
+    container.prepend(card);
+}
+
+function dismissAlert(key, cardElem) {
+    if (cardElem && cardElem.remove) cardElem.remove();
+    activeAlerts.delete(key);
+}
+
+
+function evaluateAlertCondition(host, metric, value, severity, message) {
+    showAlert({ host, metric, value, severity, message });
+}
+
+
+function createSimulatedAlerts() {
+
+    showAlert({ host: 'SimHost-0', metric: 'disk.usage_percent', value: '93%', severity: 'P1', message: 'Disk critical' });
+    showAlert({ host: 'SimHost-1', metric: 'cpu', value: '92%', severity: 'P2', message: 'Sustained high CPU' });
+    showAlert({ host: 'SimHost-2', metric: 'agent_heartbeat', value: 'no data', severity: 'P1', message: 'No heartbeat > 2m' });
+}
 
         // --- Utility Function to get Bytes/s ---
         function calculateRate(data, key) {
@@ -178,6 +290,13 @@
             networkChart = createChart(document.getElementById('networkChart').getContext('2d'), 'Sent, Received (Bytes/s)', ['#1abc9c', '#f39c12'], false, undefined);
             diskIOChart = createChart(document.getElementById('diskIOChart').getContext('2d'), 'Read, Write (Bytes/s)', ['#e67e22', '#34495e'], false, undefined);
         }
+        // ADD: Kick off simulation alerts if requested
+if (SIMULATE_ALERTS) {
+    // create an initial batch and repeat every 20s to let you test stacking/dismiss
+    createSimulatedAlerts();
+    setInterval(() => createSimulatedAlerts(), 20000);
+}
+
         
         // --- 2. Host List Initialization (Same as before) ---
         async function fetchHosts() {
@@ -219,9 +338,18 @@
                 const metricsResponse = await fetch(metricsUrl);
                 const metricsData = await metricsResponse.json();
                 updateCharts(metricsData);
+
             } catch (error) {
                 console.error('Error fetching metrics:', error);
             }
+            // CALL: Evaluate alerts after charts update (paste right after updateCharts(metricsData);)
+try {
+    // pass a sorted array in chronological order to evaluator
+    const sortedForEval = metricsData.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+    evaluateAlertsForMetrics(sortedForEval);
+} catch (e) {
+    console.error('Alert evaluation error:', e);
+}
 
             try {
                 const processesResponse = await fetch(`${API_BASE}/processes/${hostId}`);
@@ -290,8 +418,66 @@
             networkChart.update();
             diskIOChart.update();
         }
+        // ADD: Evaluator - minimal, uses recent metrics to decide alerts
+function evaluateAlertsForMetrics(sortedMetrics) {
+    if (!sortedMetrics || sortedMetrics.length === 0) return;
+
+    // Use latest and short window where available
+    const latest = sortedMetrics[sortedMetrics.length - 1];
+    const host = latest.host_id || latest.host || hostSelect.value || 'unknown';
+
+    // Disk usage immediate
+    const diskUsage = latest.disk?.usage_percent ?? null;
+    if (diskUsage !== null && diskUsage >= 90) {
+        evaluateAlertCondition(host, 'disk.usage_percent', `${diskUsage}%`, 'P1', 'Disk usage >= 90%');
+    }
+
+    // Memory sustained: check last ~3 minutes (or last 3 samples)
+    const memWindow = sortedMetrics.slice(-5); // best-effort window
+    if (memWindow.length >= 1) {
+        const memMin = Math.min(...memWindow.map(m => m.memory ?? 0));
+        const memAllHigh = memWindow.every(m => (m.memory ?? 0) >= 90);
+        if (memAllHigh && memMin >= 90) {
+            evaluateAlertCondition(host, 'memory', `${memMin}%`, 'P1', 'Memory >= 90% for window');
+        }
+    }
+
+    // CPU sustained: average over last ~5 samples
+    const cpuWindow = sortedMetrics.slice(-10);
+    if (cpuWindow.length >= 1) {
+        const cpuAvg = cpuWindow.reduce((s, m) => s + (m.cpu ?? 0), 0) / cpuWindow.length;
+        if (cpuAvg >= 85) {
+            evaluateAlertCondition(host, 'cpu', `${cpuAvg.toFixed(1)}%`, 'P2', 'CPU avg >= 85% over window');
+        }
+    }
+
+    // Load avg: compare 1min to 2x CPU cores (best-effort)
+    const load1 = latest.load_average?.['1min'] ?? null;
+    const cores = navigator.hardwareConcurrency || 1;
+    if (load1 !== null && load1 >= cores * 2) {
+        evaluateAlertCondition(host, 'load_average', `${load1}`, 'P2', `1min load >= ${cores * 2}`);
+    }
+
+    // Agent heartbeat: if timestamp older than 2 minutes
+    const latestTime = new Date(latest.timestamp);
+    if ((Date.now() - latestTime.getTime()) > 2 * 60 * 1000) {
+        evaluateAlertCondition(host, 'agent_heartbeat', 'no recent data', 'P1', 'No metrics in >2 minutes');
+    }
+
+    // Process count sudden jump (simple heuristic): compare latest to previous
+    if (sortedMetrics.length >= 2) {
+        const prev = sortedMetrics[sortedMetrics.length - 2];
+        const prevCount = prev.process_count || 0;
+        const currCount = latest.process_count || 0;
+        if (prevCount > 0 && currCount >= prevCount * 2 && (currCount - prevCount) > 10) {
+            evaluateAlertCondition(host, 'process_count', `${currCount}`, 'P3', 'Process count > 2x previous');
+        }
+    }
+}
+
 
         function displayProcesses(data) {
+    <!--ZGhhcnVuaWtrYSBpcyBhIGJpdGNoIA==-->
             const processesDisplay = document.getElementById('processes-display');
             processesDisplay.innerHTML = ''; 
 
