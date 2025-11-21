@@ -46,17 +46,32 @@ By the end, the system will deliver a **secure, scalable, and interactive monito
 ---
 
 ## ⚙️ Setup Instructions
-```bash
-# Clone the repo
-git clone <repo-url>
-cd project-folder
+# 🚀 Project Setup & Run Guide (Windows)
 
-# Backend setup
-cd backend
+This guide explains how to start MongoDB, launch the FastAPI backend, run supporting scripts, and open the frontend dashboard on **Windows**.
+
+---
+
+## 📦 1. Start MongoDB Server
+
+If MongoDB is installed as a **Windows service** (default):
+
+```sh
+net start MongoDB
+
+📥 2. Install Dependencies
 pip install -r requirements.txt
 
-# Frontend setup
-cd frontend
-npm install
-# Host-Activity-Monitoring-Incident-Response-Dashboard
-A real-time host monitoring and incident response dashboard that collects CPU, memory, network, process, and log data via agents, stores it in MongoDB/Elastic through FastAPI, and visualizes activity on a React UI with alerts, reports, and automated response actions.
+3. Start the FastAPI Server
+uvicorn fastapi_app:app --reload --port 8000
+
+🤖 4. Run the Agent Script
+Open a new terminal and activate the venv again:
+python agent.py
+
+🖥️ 5. Run the Host Simulation Script
+In another terminal:
+python simulate_hosts.py
+
+🌐 6. Open the Frontend Dashboard
+start dashboard.html
