@@ -28,17 +28,18 @@ The system continuously collects CPU, memory, disk, network, I/O, and process-le
 
 # 📁 Project Files
 
+```
 Host-Activity-Monitoring-Incident-Response-Dashboard/
-│
-├── agent.py               # Host monitoring agent
-├── simulate_hosts.py      # Multi-host simulator
-├── fastapi_app.py         # FastAPI backend + MongoDB logic
-├── dashboard.html         # Real-time dashboard UI
-├── requirements.txt       # Python dependencies
-├── Dockerfile             # Docker container for backend
-├── .env.example           # MongoDB connection template
-└── README.md              # Documentation
----
+|
+├── agent.py              
+├── simulate_hosts.py     
+├── fastapi_app.py         
+├── dashboard.html         
+├── requirements.txt       
+├── Dockerfile            
+├── .env.example           
+└── README.md             
+```
 
 # ⚙️ Tech Stack
 
